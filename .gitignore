@@ -3,9 +3,13 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# Local caches/logs
 .pytest_cache/
 .mypy_cache/
+
+# Generated experiment artifacts
+results/*.csv
+results/*.json
+plots/*.png
 
 # Generated paper artifacts from local workflow
 Team_2_Hydrazine_latex_source_revised.zip
