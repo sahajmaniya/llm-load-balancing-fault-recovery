@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Local caches/logs
+.pytest_cache/
+.mypy_cache/
+
+# Generated paper artifacts from local workflow
+Team_2_Hydrazine_latex_source_revised.zip
+Team_2_Hydrazine_paper_revised.pdf
