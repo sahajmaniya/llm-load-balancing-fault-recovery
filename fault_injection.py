@@ -1,13 +1,3 @@
-"""
-fault_injection.py
-Kills a replica mid-load to simulate fault, then optionally restarts it.
-Records the time of fault for correlation with latency spikes.
-
-Usage:
-    python fault_injection.py --replica-port 8002 --delay 30
-    (kills replica on port 8002 after 30 seconds)
-"""
-
 import argparse
 import subprocess
 import time
@@ -19,7 +9,6 @@ from datetime import datetime, timezone
 
 
 def find_listener_pid_on_port(port: int):
-    """Find PID of the LISTEN process bound to a port."""
     try:
         result = subprocess.run(
             ["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
@@ -35,7 +24,6 @@ def find_listener_pid_on_port(port: int):
 
 
 def wait_for_exit(pid: int, timeout_s: float = 3.0):
-    """Wait for a PID to exit."""
     deadline = time.time() + timeout_s
     while time.time() < deadline:
         try:
@@ -49,7 +37,6 @@ def wait_for_exit(pid: int, timeout_s: float = 3.0):
 
 
 def kill_replica(port: int):
-    """Kill replica process on given port."""
     pid = find_listener_pid_on_port(port)
     if pid is None:
         print(f"[fault] No process found on port {port}")
@@ -69,7 +56,6 @@ def kill_replica(port: int):
 
 
 def restart_replica(port: int, replica_id: int, model: str = "llama3.2:3b"):
-    """Restart a replica server in the background."""
     cmd = [
         sys.executable, "replica_server.py",
         "--port", str(port),
@@ -100,8 +86,6 @@ def main():
 
     print(f"[fault] Waiting {args.delay}s before injecting fault on port {args.replica_port}...")
     time.sleep(args.delay)
-
-    # Inject fault
     fault_time = time.time()
     fault_ts = datetime.now(timezone.utc).isoformat()
     success = kill_replica(args.replica_port)
@@ -134,8 +118,6 @@ def main():
         events.append(event2)
         print(f"[fault] Replica restarted at {restart_ts} "
               f"(recovery time: {restart_time - fault_time:.1f}s)")
-
-    # Save events log
     os.makedirs(os.path.dirname(args.log_file) or ".", exist_ok=True)
     with open(args.log_file, "w") as f:
         json.dump(events, f, indent=2)

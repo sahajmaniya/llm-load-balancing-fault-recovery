@@ -1,17 +1,3 @@
-"""
-plot_results.py
-Generates all plots for the paper from Locust CSV results.
-
-Plots generated:
-  1. Latency percentiles comparison (P50/P95/P99) per LB strategy
-  2. Throughput (req/s) per LB strategy
-  3. Latency over time during fault recovery experiment
-  4. Scaling efficiency chart
-
-Usage:
-    python plot_results.py
-"""
-
 import os
 import json
 import pandas as pd
@@ -30,7 +16,6 @@ STRATEGIES = ["round_robin", "least_connections", "random"]
 
 
 def load_stats(experiment_name: str):
-    """Load Locust stats CSV for an experiment."""
     path = f"{RESULTS_DIR}/{experiment_name}_stats.csv"
     if not os.path.exists(path):
         print(f"[plot] WARNING: {path} not found, skipping.")
@@ -39,28 +24,20 @@ def load_stats(experiment_name: str):
 
 
 def load_history(experiment_name: str):
-    """Load Locust history CSV (time series) for an experiment."""
     path = f"{RESULTS_DIR}/{experiment_name}_stats_history.csv"
     if not os.path.exists(path):
         print(f"[plot] WARNING: {path} not found, skipping.")
         return None
     df = pd.read_csv(path)
-    # Normalize timestamp to seconds from start
     if "Timestamp" in df.columns:
         df["elapsed"] = df["Timestamp"] - df["Timestamp"].min()
     return df
-
-
-# ─────────────────────────────────────────────
-# Plot 1: Latency Percentiles Bar Chart
-# ─────────────────────────────────────────────
 def plot_latency_percentiles():
     data = []
     for strategy in STRATEGIES:
         df = load_stats(f"lb_{strategy}")
         if df is None:
             continue
-        # Get aggregate row (Name == "Aggregated")
         agg = df[df["Name"] == "Aggregated"]
         if agg.empty:
             agg = df.tail(1)
@@ -95,11 +72,6 @@ def plot_latency_percentiles():
     plt.savefig(f"{PLOTS_DIR}/latency_percentiles.png", dpi=150)
     plt.close()
     print(f"[plot] Saved latency_percentiles.png")
-
-
-# ─────────────────────────────────────────────
-# Plot 2: Throughput Comparison
-# ─────────────────────────────────────────────
 def plot_throughput():
     data = []
     for strategy in STRATEGIES:
@@ -137,29 +109,18 @@ def plot_throughput():
     plt.savefig(f"{PLOTS_DIR}/throughput_comparison.png", dpi=150)
     plt.close()
     print(f"[plot] Saved throughput_comparison.png")
-
-
-# ─────────────────────────────────────────────
-# Plot 3: Fault Recovery — Latency Over Time
-# ─────────────────────────────────────────────
 def plot_fault_recovery():
     df = load_history("fault_recovery")
     if df is None:
         return
-
-    # Load fault event timestamps
     fault_events = []
     fault_file = f"{RESULTS_DIR}/fault_events.json"
     if os.path.exists(fault_file):
         with open(fault_file) as f:
             fault_events = json.load(f)
-
-    # Get start time from history
     start_time = df["Timestamp"].min() if "Timestamp" in df.columns else 0
 
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Plot P50 and P95 over time
     if "50%" in df.columns:
         ax.plot(df["elapsed"], df["50%"], label="P50 Latency", color="#4C72B0", linewidth=2)
     if "95%" in df.columns:
@@ -167,8 +128,6 @@ def plot_fault_recovery():
     if "99%" in df.columns:
         ax.plot(df["elapsed"], df["99%"], label="P99 Latency", color="#C44E52",
                 linewidth=1.5, linestyle="--")
-
-    # Mark fault and recovery events
     for event in fault_events:
         event_time = event["unix_time"] - start_time
         if event["event"] == "fault_injected":
@@ -186,11 +145,6 @@ def plot_fault_recovery():
     plt.savefig(f"{PLOTS_DIR}/fault_recovery_latency.png", dpi=150)
     plt.close()
     print(f"[plot] Saved fault_recovery_latency.png")
-
-
-# ─────────────────────────────────────────────
-# Plot 4: Error Rate During Fault
-# ─────────────────────────────────────────────
 def plot_error_rate():
     df = load_history("fault_recovery")
     if df is None:
@@ -215,11 +169,6 @@ def plot_error_rate():
     plt.savefig(f"{PLOTS_DIR}/error_rate.png", dpi=150)
     plt.close()
     print(f"[plot] Saved error_rate.png")
-
-
-# ─────────────────────────────────────────────
-# Plot 5: Latency over time per strategy
-# ─────────────────────────────────────────────
 def plot_latency_over_time():
     fig, ax = plt.subplots(figsize=(12, 6))
 

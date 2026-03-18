@@ -1,20 +1,3 @@
-"""
-load_balancer.py
-Custom load balancer with 3 strategies:
-  - round_robin
-  - least_connections
-  - random
-
-IMPROVEMENTS v2:
-  - Health check every 0.5s (was 2s) for faster fault detection
-  - Immediate replica removal on connection error during request
-  - Retry once on a different replica before failing
-  - Circuit breaker: tracks consecutive failures per replica
-
-Usage:
-    python load_balancer.py --strategy round_robin --port 9000
-"""
-
 import argparse
 import random
 import threading
@@ -33,7 +16,7 @@ REPLICAS = [
 ]
 
 STRATEGY = "round_robin"
-FAILURE_THRESHOLD = 2  # Mark dead after 2 consecutive failures
+FAILURE_THRESHOLD = 2
 
 rr_index = 0
 rr_lock = threading.Lock()
@@ -75,7 +58,6 @@ def record_success(replica: str):
 
 
 def health_check_loop():
-    """Background thread: checks replica health every 0.5 seconds."""
     while True:
         for replica in list(REPLICAS):
             try:
@@ -167,13 +149,10 @@ async def infer(request: Request):
             data = resp.json()
             record_success(replica)
     except Exception as e:
-        # Immediately record failure — triggers dead marking if threshold hit
         record_failure(replica)
         with conn_lock:
             connections[replica] = max(0, connections.get(replica, 1) - 1)
-        primary_decremented = True  # Already decremented, skip finally
-
-        # Retry on a different replica
+        primary_decremented = True
         retry_replica = pick_replica(exclude=replica)
         if retry_replica:
             with conn_lock:

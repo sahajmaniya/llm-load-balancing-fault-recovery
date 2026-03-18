@@ -1,14 +1,3 @@
-"""
-replica_server.py
-A single LLM replica server using FastAPI + Ollama.
-Run multiple instances on different ports to simulate multi-replica serving.
-
-Usage:
-    python replica_server.py --port 8001 --replica-id 1
-    python replica_server.py --port 8002 --replica-id 2
-    python replica_server.py --port 8003 --replica-id 3
-"""
-
 import argparse
 import time
 import httpx
@@ -17,8 +6,6 @@ from pydantic import BaseModel
 import uvicorn
 
 app = FastAPI()
-
-# Will be set via CLI args
 REPLICA_ID = 1
 OLLAMA_URL = "http://localhost:11434"
 MODEL_NAME = "llama3.2:3b"

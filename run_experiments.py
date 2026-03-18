@@ -1,19 +1,3 @@
-"""
-run_experiments.py
-Orchestrates all experiments:
-  1. Load balancing comparison (round_robin vs least_connections vs random)
-  2. Fault recovery experiment (kill a replica mid-load)
-
-Prerequisites:
-  - Ollama running: `ollama serve`
-  - Model pulled: `ollama pull llama3.2:3b`
-  - Replicas running on ports 8001, 8002, 8003
-  - Load balancer running on port 9000
-
-Usage:
-    python run_experiments.py
-"""
-
 import subprocess
 import time
 import os
@@ -97,7 +81,6 @@ def run_locust(experiment_name: str):
 
 
 def experiment_load_balancing():
-    """Compare 3 load balancing strategies."""
     strategies = ["round_robin", "least_connections", "random"]
 
     for strategy in strategies:
@@ -114,21 +97,18 @@ def experiment_load_balancing():
         finally:
             stop_process(lb_proc)
             stop_replicas(replica_procs)
-        time.sleep(3)  # Cool down between experiments
+        time.sleep(3)
 
     print("\n[runner] Load balancing experiments complete!")
 
 
 def experiment_fault_recovery():
-    """Test fault recovery with round_robin (default)."""
     print(f"\n{'='*50}")
     print(f"[runner] EXPERIMENT: Fault Recovery")
     print(f"{'='*50}")
 
     replica_procs = start_replicas()
     lb_proc = start_load_balancer("round_robin")
-
-    # Start fault injection in background (kills replica 2 after 30s)
     fault_cmd = [
         sys.executable, "fault_injection.py",
         "--replica-port", "8002",
@@ -140,8 +120,6 @@ def experiment_fault_recovery():
     ]
     fault_proc = subprocess.Popen(fault_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print(f"[runner] Fault injection scheduled (kills replica 2 after 30s)")
-
-    # Run locust for 120s — fault happens at 30s
     try:
         rc = run_locust("fault_recovery")
         if rc != 0:
